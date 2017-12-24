@@ -1,0 +1,167 @@
+---
+header-includes:
+      - \usepackage[orientation=portrait,size=a0]{beamerposter} #beamerposterを利用してa0縦のポスターを作成
+      - \title{Rmarkdownでポスター発表用のポスターを作成する} #タイトル
+      - \author{NAKAJIMA Yukihiro} #著者
+      - \institute{Rmarkdown大学 \LaTeX 学部} #所属
+      - \usepackage{luatexja} #日本語の文章を作成
+      - \usepackage[ipaex]{luatexja-preset} #フォントはipaexを使用
+      - \renewcommand{\kanjifamilydefault}{\gtdefault} #明朝体はゴシック体に
+      - \usetheme{sumiilab-poster} #東北大学 住井研究室のスタイルを少し修正して拝借
+      - \beamertemplatenavigationsymbolsempty #東北大学 住井研究室のスタイルを少し修正して拝借
+      - \renewcommand{\figurename}{図} #図のキャプションをfigureから図に
+      - \renewcommand{\tablename}{表} #表のキャプションをtableから表
+      - \def\bcols{\begin{columns}} #LaTeX環境の中でマークダウンが使えるようにおまじない
+      - \def\bcol{\begin{column}}
+      - \def\ecol{\end{column}}
+      - \def\ecols{\end{columns}}
+      - \def\bblck{\begin{block}}
+      - \def\eblck{\end{block}}
+      - \usepackage{tikz}
+      - \usetikzlibrary{positioning}
+      - \newcommand{\highlightcap}[3][yellow]{\tikz[baseline=(x.base)]{\node[rectangle,rounded corners,fill=#1!10](x){#2} node[below of=x, color=#1]{#3};}}
+output:
+  beamer_presentation:
+    latex_engine: lualatex
+    keep_tex: true
+    slide_level: 3
+bibliography: iris.bib #引用する書誌情報をまとめたファイル
+biblio-style: apsr #引用する書誌情報のスタイル
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(cashe = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+knitr::opts_chunk$set(out.width = '\\textwidth')
+```
+
+```{r packages, include=FALSE}
+library(ggplot2)
+library(dplyr)
+library(xtable)
+options(xtable.comment = FALSE)
+```
+
+\bblck{ポスターをRmarkdownで}
+Rmarkdownを使って、ポスターを描くことができます。
+ポスターをRmarkdownで書くことの利点は様々挙げられますが、主な理由は以下の通りです。
+
+Rmarkdownでポスターを書いた方がいい理由
+
+- すぐに研究を再現できる
+- スライドで発表した資料などを使いまわせる
+- キレイ
+- パワーポイントにはアレルギーがある
+    - Officeが苦手な方はぜひ！
+
+
+\eblck
+
+\bcols[onlytextwidth]
+\bcol{0.495\textwidth}
+
+\bblck{表を書いてみる}
+
+アヤメの花(iris)のデータ[@Anderson1936; @Fisher1936]を使って色々書いてみましょう。
+表 \ref{head}には、irisの上から5行を表示しています。
+
+```{r iris,results = "asis", include=TRUE}
+iris %>% 
+  head(5) %>% 
+  xtable(digits = 2, type = "latex", comment = FALSE, caption="irisの上から6行を例示", label = "head") %>% 
+  print(include.rownames=FALSE, scalebox = 0.95, caption.placement = "top")
+```
+
+\eblck
+
+\bblck{表を書いてみる}
+
+図 \ref{fig:Petal_plot}は花弁の長さと幅の散布図を示しています。
+
+```{r Petal_plot, include=TRUE, fig.cap="花弁の長さと幅の散布図"}
+ggplot(iris,aes(x=Petal.Length, y=Petal.Width))+
+  geom_point()
+```
+
+
+\eblck
+
+\ecol
+\bcol{0.495\textwidth}
+
+\bblck{数式を書いてみる}
+
+少し複雑な式を書いてみましょう。
+式\ref{cor}にピアソンの積率相関係数を求める式を書いてみました。
+パワーポイントなどで数式を書くのは大変ですが、 \LaTeX 記法ならきれいに一発で書けますね。
+
+\begin{align}
+r_{xy} = \dfrac{\Sigma_{i=1}^n (x_i-\overline{x})(y_i-\overline{y})}
+            {\sqrt{\Sigma_{i=1}^n (x_i-\overline{x})^2}
+             \sqrt{\Sigma_{i=1}^n (y_i-\overline{y})^2}}
+\label{cor}
+\end{align}
+
+\eblck
+
+　
+
+\bblck{表の中で特殊文字を書いてみる}
+
+表の中でギリシャ文字などの特殊文字を書きたいことがあると思います。
+
+まず、式\ref{lm}を利用して回帰分析をしましょう。
+
+\begin{align}
+y = \highlightcap[red]{$\alpha$}{切片}
+    +
+    \highlightcap[blue]{$\beta$}{回帰係数}
+    \highlightcap[blue]{$X$}{説明変数}
+    +
+    \highlightcap[green]{$\varepsilon$}{誤差項}
+\label{lm} 
+\end{align}
+\begin{align}
+\varepsilon \sim N(0, \sigma^2) \label{epsilon}
+\end{align}
+
+$y$は花弁の幅、$X$は花弁の長さとして分析します。
+InterceptやPepal.Lengthではなく、$\alpha$や$\beta$として出力してみましょう。
+その結果が、表\ref{lm_table}です。
+
+```{r lm, results = "asis", include=TRUE}
+result <- lm(Petal.Width ~ Petal.Length, data = iris)
+
+coeff <- result$coefficients %>% 
+  as.data.frame()
+colnames(coeff) <- ("回帰係数")
+
+pval <- summary(result)$coefficients[,4] %>% 
+  as.data.frame()
+colnames(pval) <- ("P値")
+
+table <- bind_cols(coeff, pval)
+rownames(table) <- c("$\\alpha$", "$\\beta$")
+
+adj.r2 <- summary(result)["adj.r.squared"] %>% 
+  as.numeric() %>% 
+  round(digits = 2)
+
+table %>%   
+  head() %>% 
+  xtable(digits = 3, type = "latex", comment = FALSE, caption="回帰分析の結果", label = "lm_table") %>% 
+  print(sanitize.text.function =function(x) x, scalebox = 0.95, caption.placement = "top")
+```
+
+自由度調整済み決定係数は`r adj.r2`でした。
+
+\eblck
+
+\ecol
+\ecols
+
+引用文献
+
+\small
